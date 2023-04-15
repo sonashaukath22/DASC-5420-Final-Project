@@ -1,0 +1,235 @@
+---
+title: "DASC5420 PROJECT"
+author: "SONA SHAUKATH"
+date: "2023-03-24"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r}
+#loading packages
+library(ggplot2)
+library(dplyr)
+library(class)
+#reading the csv file
+heart <- read.csv("/Users/sonashaukath/Downloads/heart_2020_cleaned.csv", header = TRUE, ",")
+x<-sample(1:nrow(heart), 10000)
+heart<- heart[x, ]
+```
+```{r}
+#Expolatory data analysis
+summary(heart)
+head(heart)
+#omitting the null values
+heart <- na.omit(heart)
+#checking the number of null values
+sum(is.na(heart))
+```
+```{r}
+#Converting the response variable to binary variable
+heart$HeartDisease <- ifelse(heart$HeartDisease == "Yes", 1, 0)
+#Converting Categorical variables to binary variables
+heart$Smoking <- ifelse(heart$Smoking == "Yes", 1, 0)
+heart$AlcoholDrinking  <- ifelse(heart$AlcoholDrinking == "Yes", 1, 0)
+heart$Stroke  <- ifelse(heart$Stroke == "Yes", 1, 0)
+heart$DiffWalking  <- ifelse(heart$DiffWalking == "Yes", 1, 0)
+heart$Sex <- ifelse(heart$Sex == "Male", 1, 0)
+heart$PhysicalActivity  <- ifelse(heart$PhysicalActivity == "Yes", 1, 0)
+heart$Asthma  <- ifelse(heart$Asthma == "Yes", 1, 0)
+heart$KidneyDisease <- ifelse(heart$KidneyDisease == "Yes", 1, 0)
+heart$SkinCancer  <- ifelse(heart$SkinCancer == "Yes", 1, 0)
+```
+```{r}
+#Converting GenHealth variable to numeric values
+heart$GenHealth <- factor(heart$GenHealth, levels = c("Poor", "Fair", "Good", "Very good", "Excellent"))
+heart$GenHealth  <- as.integer(heart$GenHealth) - 1
+#Converting Sleeptime variable to numeric values
+heart$SleepTime <- ifelse(heart$SleepTime >= median(heart$SleepTime), 1, 0)
+#Converting Diabetes variable to numeric values
+heart$Diabetic <- factor(heart$Diabetic, levels = c("No", "No, borderline diabetes", "Yes (during pregnancy)", "Yes"))
+heart$Diabetic <- as.integer(heart$Diabetic) - 1
+```
+```{r}
+#getting unique values of each column
+for (col_n in names(heart)) {
+  unq_val <- length(unique(heart[[col_n]]))
+  print(paste("Feature '", col_n, "' has '", unq_val, "' unique values", sep = ""))
+}
+```
+
+```{r}
+# Creating a boxplot of BMI to check for outliers
+ggplot(heart, aes(x = HeartDisease , y = BMI)) +
+  geom_boxplot(fill = "#FF6666") +
+  labs(y = "BMI", x = "HeartDisease" ) +
+  ggtitle("Boxplot of BMI againt Heart Disease")
+```
+```{r}
+# Identifying any outliers using the "identify_outliers" function from my previous response
+identify_outliers <- function(x) {
+  q1 <- quantile(x, 0.25)
+  q3 <- quantile(x, 0.75)
+  iqr <- q3 - q1
+  upper_fence <- q3 + 1.5*iqr
+  lower_fence <- q1 - 1.5*iqr
+  outlier_indices <- which(x < lower_fence | x > upper_fence)
+  return(outlier_indices)
+}
+
+# Applying the function to the BMI variable
+outliers <- identify_outliers(heart$BMI)
+
+# Print the indices of any outliers identified
+if (length(outliers) > 0) {
+  cat("Outliers identified in BMI. \n")
+  
+  # Remove the outliers from the dataset
+  heart <- heart[-outliers,]
+  cat("Outliers removed from the dataset.\n")
+} else {
+  cat("No outliers identified in BMI.\n")
+}
+```
+```{r}
+# Creating a boxplot of BMI to check if the outliers are removed
+ggplot(heart, aes(x = HeartDisease , y = BMI)) +
+  geom_boxplot(fill = "#FF6666") +
+  labs(y = "BMI", x = "Heart Disease") +
+  ggtitle("Boxplot of BMI against Heart Disease")
+```
+```{r}
+#scaling the continuous variable
+heart$BMI <- scale(heart$BMI)
+summary(heart$BMI)
+```
+```{r}
+#Data Visualisation
+# Histogram for checking the balance of the outcome variable HeartDisease for classification
+ggplot(heart, aes(x = HeartDisease)) + 
+  geom_bar(position = position_dodge(preserve = "single"), fill = "#FF6666") + 
+  labs(title = "Histogram of Heart Disease", x = "Heart Disease", y = "Count")
+```
+```{r}
+#Histogram of the continuous variable BMI 
+hist(heart$BMI, main = "Histogram of BMI", xlab = "BMI", col = "#FF6666")
+```
+```{r}
+#Visualising the categorical variables using a plot grid of box plots
+library(ggplot2)
+library(cowplot)
+b0 <- ggplot(data = heart, aes(y= HeartDisease))+
+  geom_boxplot(outlier.color = "#FF6666", fill = "#FF6666")
+b1 <- ggplot(data = heart, aes(y= Smoking))+
+  geom_boxplot(outlier.color = "#FF6666", fill = "#FF6666")
+b2 <- ggplot(data = heart, aes(y = AlcoholDrinking))+
+  geom_boxplot(outlier.color = "#FF6666", fill = "#FF6666")
+b3 <- ggplot(data = heart, aes(y = Stroke))+
+  geom_boxplot(outlier.color = "#FF6666", fill = "#1CA160") 
+b4 <- ggplot(data = heart, aes(y = PhysicalHealth))+
+  geom_boxplot(outlier.color = "#FF6666", fill = "#FF6666") 
+b5 <- ggplot(data = heart, aes(y = MentalHealth))+
+  geom_boxplot(outlier.color = "#FF6666", fill = "#FF6666") 
+b6 <- ggplot(data = heart, aes(y = DiffWalking))+
+  geom_boxplot(outlier.color = "#FF6666", fill = "#FF6666") 
+b7 <- ggplot(data = heart, aes(y = Sex))+
+  geom_boxplot(outlier.color = "#FF6666", fill = "#FF6666") 
+b8 <- ggplot(data = heart, aes(y = Diabetic))+
+  geom_boxplot(outlier.color = "#FF6666", fill = "#FF6666") 
+b9 <- ggplot(data = heart, aes(y = PhysicalActivity))+
+  geom_boxplot(outlier.color = "#FF6666", fill = "#FF6666")
+b10 <- ggplot(data = heart, aes(y = GenHealth))+
+  geom_boxplot(outlier.color = "#FF6666", fill = "#FF6666")
+b11 <- ggplot(data = heart, aes(y = SleepTime))+
+  geom_boxplot(outlier.color = "#FF6666", fill = "#FF6666")
+b12 <- ggplot(data = heart, aes(y = Asthma))+
+  geom_boxplot(outlier.color = "#FF6666", fill = "#FF6666")
+b13 <- ggplot(data = heart, aes(y = KidneyDisease))+
+  geom_boxplot(outlier.color = "#FF6666", fill = "#FF6666")
+b14 <- ggplot(data = heart, aes(y = SkinCancer))+
+  geom_boxplot(outlier.color = "#FF6666", fill = "#FF6666")
+b <- plot_grid(b1, b2, b3, b4, b5,
+               b6, b7, b8, b9, b10,
+               b11, b12, b13, b14,
+               ncol = 5, label_fontface = "italic", rel_heights = c(1.2,1.2,1.2))
+b
+```
+```{r}
+#using caret package to create partition and to create classification models
+library(caret)
+library(class)
+library(lattice)
+#setting seed for reproductibility
+set.seed(5420)
+#Splitting data into Training and Testing Data sets
+#70% is Train data and 30% is Test data
+index <- createDataPartition(heart$HeartDisease, p = 0.7, list = FALSE)
+train_heart <- heart[index, ]
+test_heart <- heart[-(index), ]
+train_heart$HeartDisease <- as.factor(train_heart$HeartDisease)
+test_heart$HeartDisease <- as.factor(test_heart$HeartDisease)
+```
+```{r}
+#Classification models
+#KNN Classifier
+library("MLmetrics")
+knn_model <- train(HeartDisease~., data = train_heart, method = "knn")
+knn_predict <- predict(knn_model, newdata = test_heart)
+knn_cm <- confusionMatrix(knn_predict, test_heart$HeartDisease)
+knn_f1 <- F1_Score(knn_predict, test_heart$HeartDisease)
+knn_cm
+cat("F1 score of KNN Classifier:", knn_f1)
+```
+```{r}
+#SVM Classifier
+library(e1071)
+svm_model <- svm(HeartDisease~., data = train_heart)
+svm_predict <- predict(svm_model, newdata = test_heart)
+svm_cm <- confusionMatrix(svm_predict, test_heart$HeartDisease)
+svm_f1 <- F1_Score(svm_predict, test_heart$HeartDisease)
+svm_cm
+cat("f1 score of SVM Classifier: ", svm_f1)
+```
+```{r}
+#Random Forest Classifier
+library(randomForest)
+r_model <- randomForest(HeartDisease~., data = train_heart)
+r_predict <- predict(r_model, newdata = test_heart)
+r_cm <- confusionMatrix(r_predict, test_heart$HeartDisease)
+r_f1 <- F1_Score(r_predict, test_heart$HeartDisease)
+r_cm
+cat("F1 score of Random Forest Classifier: ", r_f1)
+```
+```{r}
+#Decision Tree Classifier
+library(rpart)
+d_model <- rpart(HeartDisease~., data = train_heart)
+d_predict <- predict(d_model, newdata = test_heart, type = "class")
+d_cm <- confusionMatrix(d_predict, test_heart$HeartDisease)
+d_f1 <- F1_Score(d_predict, test_heart$HeartDisease)
+d_cm
+cat("f1 score of Decision Tree: ",d_f1)
+```
+```{r}
+#Naive Bayes Classifier
+library(naivebayes)
+n_model <- naiveBayes(HeartDisease~., data = train_heart)
+n_predict <- predict(n_model, newdata = test_heart, type = "class")
+n_cm <- confusionMatrix(n_predict, test_heart$HeartDisease)
+n_f1 <- F1_Score(n_predict, test_heart$HeartDisease)
+n_cm
+cat("F1 score of Naive Bayes Classifier: ",n_f1)
+```
+```{r}
+#Comparing f1 scores by plotting
+f1_scores <- data.frame(Model = c("K-Nearest Neighbors", "Support Vector Machines", "Random Forest", "Naive Bayes", "Decision Tree"),
+                        F1_Score = c(knn_f1,svm_f1, r_f1, n_f1, d_f1))
+f1_scores
+
+ggplot(f1_scores, aes(x = Model, y = F1_Score)) +
+geom_bar(stat = "identity", fill = "#FF6666") +
+ggtitle("Comparison of F1 Scores") +
+xlab("Model") +
+ylab("F1 Score") +
+theme(plot.title = element_text(hjust = 0.5))
+```
